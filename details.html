@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Details</title>
+</head>
+<body>
+
+    <form id="detailForm">
+        <label for="titulo">Titulo</label>
+        <input id="titulo" name="titulo"></input>
+        <label for="categoria">Categoria</label>
+        <input id="categoria" name="categoria"></input> 
+        <label for="preco">Preco</label>
+        <input id="preco" name="preco"></input> 
+        <label for="quantidade">Quantidade</label>
+        <input id="quantidade" name="quantidade"></input> 
+        <label for="autores">Autores</label>
+        <input id="autores" name="autores"></input>
+        <label for="editora">Editora</label>
+        <input id="editora" name="editora"></input> 
+        <input type="submit" value="En->viado<-"></input> 
+    </form>
+
+    <script>
+        const token = JSON.parse(localStorage.getItem('TOKEN'))
+
+        const detailForm = document.getElementById("detailForm")
+        
+         const id = new URLSearchParams(window.location.search).get("id")
+
+        function populaInput(id){
+            fetch('https://livraria-app.herokuapp.com/api/livros/' + id + "/", {
+            headers: {
+                'Authorization': 'Bearer ' + token.access
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            for(const key in data){
+                const camp = data[key]
+                let value = null
+                if(typeof camp === "object" ){
+                    value = camp.nome
+                }else if(isArray(camp)){
+                    value = camp[0].nome
+                }else{
+                    value = camp
+                }
+                document.getElementById(camp).value = value
+            }
+        })
+        }
+
+
+        detailForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(detailForm);
+            const livro = {}
+            for (const [key, value] of formData.entries()){
+                livro[key] = value
+            }
+            console.log(livro)
+        })
+        populaInput(id)
+    </script>
+</body>
+</html>
