@@ -1,69 +1,168 @@
 <!DOCTYPE html>
 <html lang="pt-br">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Details</title>
+
+    <style>
+        /* botei aqui só pra ficar mais entendível */
+        input,
+        select {
+            display: block;
+        }
+    </style>
 </head>
+
 <body>
 
     <form id="detailForm">
         <label for="titulo">Titulo</label>
         <input id="titulo" name="titulo"></input>
         <label for="categoria">Categoria</label>
-        <input id="categoria" name="categoria"></input> 
+        <select id="categoria" name="categoria"></select>
         <label for="preco">Preco</label>
-        <input id="preco" name="preco"></input> 
+        <input id="preco" name="preco"></input>
         <label for="quantidade">Quantidade</label>
-        <input id="quantidade" name="quantidade"></input> 
+        <input id="quantidade" name="quantidade"></input>
         <label for="autores">Autores</label>
-        <input id="autores" name="autores"></input>
+        <select id="autores" name="autores" multiple></select>
         <label for="editora">Editora</label>
-        <input id="editora" name="editora"></input> 
-        <input type="submit" value="En->viado<-"></input> 
+        <select id="editora" name="editora"></select>
+
+        <input type="submit" value="En->viado<-"></input>
     </form>
 
     <script>
         const token = JSON.parse(localStorage.getItem('TOKEN'))
 
         const detailForm = document.getElementById("detailForm")
-        
-         const id = new URLSearchParams(window.location.search).get("id")
 
-        function populaInput(id){
-            fetch('https://livraria-app.herokuapp.com/api/livros/' + id + "/", {
-            headers: {
-                'Authorization': 'Bearer ' + token.access
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            for(const key in data){
-                const camp = data[key]
-                let value = null
-                if(typeof camp === "object" ){
-                    value = camp.nome
-                }else if(isArray(camp)){
-                    value = camp[0].nome
-                }else{
-                    value = camp
+        const id = new URLSearchParams(window.location.search).get("id")
+
+        function populaCampos(livro) {
+            console.log(livro)
+
+            for (const [chave, valor] of Object.entries(livro)) {
+                let novoValor = null
+                
+                console.log(valor)
+                
+                if (Array.isArray(valor)) {
+                    const select = document.querySelector("#autores")
+
+                    console.log("Muitos autores!");
+                    console.log(valor);
+                    for (const autor of valor) {
+                        const option = document.createElement("option")
+                        option.value = autor.id
+                        option.innerText = autor.nome
+
+                        select.appendChild(option)
+                    }
+
+                    continue
+                } else if (typeof valor === "object") {
+                    novoValor = valor.id
+                } else {
+                    novoValor = valor
                 }
-                document.getElementById(camp).value = value
+
+                const elemento = document.getElementById(chave)
+
+                // se não for nulo...
+                if (elemento) {
+                    elemento.value = novoValor
+                }
             }
-        })
+        }
+
+        function populaCategorias(categorias) {
+            const selectCategorias = document.querySelector("#categoria")
+
+            for (const categoria of categorias) {
+                const option = document.createElement("option")
+                option.value = categoria.id
+                option.innerText = categoria.descricao
+
+                selectCategorias.appendChild(option)
+            }
+        }
+
+        function populaEditoras(editoras) {
+            const selectEditora = document.querySelector("#editora")
+
+            for (const editora of editoras) {
+                const option = document.createElement("option")
+                option.value = editora.id
+                option.innerText = editora.nome
+
+                selectEditora.appendChild(option)
+            }
+        }
+
+        function populaInput(id) {
+            console.log("Populando input....");
+
+            // campos do livro
+            fetch('https://livraria-app.herokuapp.com/api/livros/' + id + "/", {
+                headers: {
+                    'Authorization': 'Bearer ' + token.access
+                }
+            })
+            .then(response => response.json())
+            .then(populaCampos)
+
+            // opções de editoras
+            fetch('https://livraria-app.herokuapp.com/api/editoras/', {
+                headers: {
+                    'Authorization': 'Bearer ' + token.access
+                }
+            })
+            .then(response => response.json())
+            .then(populaEditoras)
+
+            // opções de categorias
+            fetch('https://livraria-app.herokuapp.com/api/categorias/', {
+                headers: {
+                    'Authorization': 'Bearer ' + token.access
+                }
+            })
+            .then(response => response.json())
+            .then(populaCategorias)
         }
 
 
-        detailForm.addEventListener('submit', function(e) {
+        detailForm.addEventListener('submit', function (e) {
             e.preventDefault();
+
             const formData = new FormData(detailForm);
             const livro = {}
-            for (const [key, value] of formData.entries()){
+
+            for (const [key, value] of formData.entries()) {
                 livro[key] = value
             }
-            console.log(livro)
+
+            // autores precisa de uma coisinha diferentes
+            livro.autores = formData.getAll("autores")
+
+            // PATCH nele!!!
+
+            fetch('https://livraria-app.herokuapp.com/api/livros/' + id + '/', {
+                method: 'PATCH',
+                body: JSON.stringify(livro),
+                headers: {
+                    'Authorization': 'Bearer ' + token.access,
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(r => r.json())
+            .then(console.log)
+            .catch(console.error)
         })
         populaInput(id)
     </script>
 </body>
+
 </html>

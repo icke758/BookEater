@@ -42,7 +42,7 @@ dataTableBody.addEventListener('click', function(event) {
         const id = event.target.getAttribute('data-id');
         
         if (confirm('Are you sure you want to delete this item?')) {
-            fetch(`https://sua-api.com/dados/${id}`, {
+            fetch(`https://livraria-app.herokuapp.com/api/livros/${id}/`, {
                 method: 'DELETE',
                 headers: {
                     'Authorization': 'Bearer ' + localStorage.getItem('token')
@@ -62,8 +62,5 @@ dataTableBody.addEventListener('click', function(event) {
     }
 });
 
-// ... (restante do código anterior)
-
-// Atualizar a tabela quando a página é carregada
 updateTable();
 
